@@ -225,6 +225,18 @@ body {
   line-height: 1.85;
 }
 .letter-body p { margin-bottom: 1.1em; }
+.letter-body ul.tech-list {
+  margin: 0 0 1.1em 1.4em;
+  padding: 0;
+}
+.letter-body ul.tech-list li {
+  font-family: var(--font-serif);
+  font-size: 1.075rem;
+  line-height: 1.75;
+  color: var(--ink);
+  margin-bottom: .25em;
+  list-style: disc;
+}
 .letter-body p:last-child { margin-bottom: 0; }
 
 /* ─── Signature block in letter ──────────────────────────── */
