@@ -447,6 +447,39 @@ body {
   color: var(--ink-light);
 }
 
+
+/* ─── WhatsApp inline button (below Generate) ───────────── */
+.whatsapp-inline {
+  margin-top: 14px;
+  animation: fadeUp .3s ease;
+}
+.whatsapp-inline.hidden { display: none; }
+
+.btn-whatsapp-big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 24px;
+  background: #25d366;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37,211,102,.35);
+  transition: background .18s, box-shadow .18s, transform .12s;
+}
+.btn-whatsapp-big:hover {
+  background: #1ebe59;
+  box-shadow: 0 6px 20px rgba(37,211,102,.45);
+  transform: translateY(-1px);
+}
+.btn-whatsapp-big:active { transform: translateY(0); }
+
 /* ─── Footer ─────────────────────────────────────────────── */
 .site-footer {
   background: var(--navy);
