@@ -118,247 +118,271 @@
     }
   });
 
-  /* ================================================================
-     buildPDF — draws everything on a single A4 canvas then wraps
-     it in a one-page PDF via jsPDF.
-     Sizing is carefully calculated so the full letter + signature
-     always fits inside the A4 frame.
-  ================================================================ */
   async function buildPDF(sigDataURL) {
-    const A4_W = 210;
-    const A4_H = 297;
+    const A4_W = 210, A4_H = 297;
     const DPI  = 180;
     const MM   = DPI / 25.4;
+    const cW   = Math.round(A4_W * MM);
+    const cH   = Math.round(A4_H * MM);
+    const mL   = Math.round(18 * MM);
+    const mR   = Math.round(14 * MM);
+    const mT   = Math.round(10 * MM);
+    const mB   = Math.round(14 * MM);   // bottom safe zone (above footer)
+    const footH= Math.round(7  * MM);
+    const iW   = cW - mL - mR;
+    const maxY = cH - footH - mB;       // last y allowed before footer
 
-    const cW = Math.round(A4_W * MM);
-    const cH = Math.round(A4_H * MM);
-    const mL = Math.round(20 * MM);
-    const mR = Math.round(14 * MM);
-    const mT = Math.round(10 * MM);
-    const iW = cW - mL - mR;
-
-    function makeCanvas() {
-      const c = document.createElement("canvas");
-      c.width = cW; c.height = cH;
+    // ── Shared canvas factory ─────────────────────────────────
+    function makeCanvas(pageNum, total) {
+      const c   = document.createElement("canvas");
+      c.width   = cW; c.height = cH;
       const ctx = c.getContext("2d");
-      // white bg
       ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cW, cH);
-      // gold top bar
       ctx.fillStyle = "#c9a84c"; ctx.fillRect(0, 0, cW, Math.round(3.5 * MM));
-      // navy left accent
       ctx.fillStyle = "#1a1a2e"; ctx.fillRect(0, 0, Math.round(2.5 * MM), cH);
-      // navy footer bar
-      ctx.fillStyle = "#1a1a2e"; ctx.fillRect(0, cH - Math.round(7 * MM), cW, Math.round(7 * MM));
+      ctx.fillStyle = "#1a1a2e"; ctx.fillRect(0, cH - footH, cW, footH);
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.font = Math.round(2.5 * MM) + "px Arial, sans-serif";
+      ctx.textBaseline = "middle"; ctx.textAlign = "center";
+      ctx.fillText("(c) 2026 SpidR - Document confidentiel - Page " + pageNum + "/" + total, cW / 2, cH - footH / 2);
+      ctx.textAlign = "left"; ctx.textBaseline = "top";
       return { c, ctx };
     }
 
-    // ════════════════════════════════════════════
-    // PAGE 1 — Header + full letter body
-    // ════════════════════════════════════════════
-    const { c: c1, ctx: ctx1 } = makeCanvas();
-    let y = mT + Math.round(4 * MM);
-
-    // Logo + SpidR + date
-    const lH = Math.round(13 * MM);
     const logoEl = document.querySelector("#letter-logo");
-    if (logoEl && logoEl.complete && logoEl.naturalWidth > 0) {
-      const lW = Math.round((logoEl.naturalWidth / logoEl.naturalHeight) * lH);
-      ctx1.drawImage(logoEl, mL, y, lW, lH);
-    } else {
-      ctx1.fillStyle = "#1a1a2e";
-      ctx1.font = "bold " + Math.round(7 * MM) + "px Georgia, serif";
-      ctx1.textBaseline = "middle";
-      ctx1.fillText("SpidR", mL, y + lH / 2);
+    const lH     = Math.round(12 * MM);
+
+    // ── Shared mini-header (logo + date) for pages 1 & 2 ─────
+    function drawHeader(ctx, dateRight) {
+      let hY = mT + Math.round(2 * MM);
+      if (logoEl && logoEl.complete && logoEl.naturalWidth > 0) {
+        const lW = Math.round((logoEl.naturalWidth / logoEl.naturalHeight) * lH);
+        ctx.drawImage(logoEl, mL, hY, lW, lH);
+      } else {
+        ctx.fillStyle = "#1a1a2e";
+        ctx.font = "bold " + Math.round(6 * MM) + "px Georgia, serif";
+        ctx.textBaseline = "middle";
+        ctx.fillText("SpidR", mL, hY + lH / 2);
+        ctx.textBaseline = "top";
+      }
+      if (dateRight) {
+        ctx.fillStyle = "#555555";
+        ctx.font = "italic " + Math.round(3.7 * MM) + "px Georgia, serif";
+        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        ctx.fillText("Paris, le 19 fevrier 2026", cW - mR, hY + lH / 2);
+        ctx.textAlign = "left"; ctx.textBaseline = "top";
+      }
+      return hY + lH + Math.round(5 * MM);
     }
-    ctx1.fillStyle = "#555555";
-    ctx1.font = "italic " + Math.round(4 * MM) + "px Georgia, serif";
-    ctx1.textAlign = "right"; ctx1.textBaseline = "middle";
-    ctx1.fillText("Paris, le 19 fevrier 2026", cW - mR, y + lH / 2);
-    ctx1.textAlign = "left";
-    y += lH + Math.round(5 * MM);
 
-    // Divider
-    ctx1.strokeStyle = "#e2ddd5"; ctx1.lineWidth = 1;
-    ctx1.beginPath(); ctx1.moveTo(mL, y); ctx1.lineTo(cW - mR, y); ctx1.stroke();
-    y += Math.round(5 * MM);
+    // ── Body font settings ────────────────────────────────────
+    const bFS  = Math.round(4.3 * MM);
+    const lnH  = bFS * 1.72;
+    const pGap = Math.round(2.8 * MM);
 
-    // Objet box
-    const objFS = Math.round(4 * MM);
-    const objH  = Math.round(9 * MM);
-    ctx1.fillStyle = "#f7f5f1"; ctx1.fillRect(mL, y, iW, objH);
-    ctx1.fillStyle = "#c9a84c"; ctx1.fillRect(mL, y, Math.round(2.5 * MM), objH);
-    ctx1.fillStyle = "#1c1c1c";
-    ctx1.font = objFS + "px Arial, sans-serif";
-    ctx1.textBaseline = "middle";
-    ctx1.fillText("Objet : Lettre de recommandation - Ilyesse El Adaoui", mL + Math.round(5 * MM), y + objH / 2);
-    y += objH + Math.round(7 * MM);
-
-    // Body text
-    const bFS = Math.round(4.2 * MM);
-    const lnH = bFS * 1.75;
-    const pGap = Math.round(3 * MM);
-
-    ctx1.fillStyle = "#1c1c1c";
-    ctx1.textBaseline = "top";
-    ctx1.font = bFS + "px Georgia, serif";
-
-    ctx1.fillText("A qui de droit,", mL, y);
-    y += lnH + pGap;
-
-    // paragraphs = array of strings OR {bullet: true, items: [...]}
+    // ── All paragraphs of the letter ──────────────────────────
     const paragraphs = [
-      "Je soussigne Geoffroy Detrousselle, CEO de la societe Spidr, recommande vivement Ilyesse El Adaoui, avec qui j'ai eu l'opportunite de collaborer dans le cadre de ses missions au sein de notre entreprise en tant que Data Engineer.",
-      "Durant sa mission chez Spidr, Ilyesse a travaille sur le developpement et l'evolution d'un projet technologique ambitieux visant a concevoir un agent intelligent connecte a WhatsApp, destine a automatiser certaines interactions professionnelles, structurer les echanges et assister les utilisateurs dans la gestion de leurs communications. Ce projet s'inscrit dans une logique de creation d'un produit SaaS scalable, combinant data, intelligence artificielle et technologies cloud.",
-      "Dans ce contexte, Ilyesse a contribue a plusieurs aspects techniques majeurs du projet. Il a notamment participe a la conception et au developpement de composants backend en Python, a l'integration d'APIs externes et a la mise en place d'une architecture technique reposant sur des services cloud modernes.",
-      "Plus precisement, ses travaux ont implique l'utilisation et l'integration de technologies telles que :",
-      { bullet: true, items: [
-        "Python pour le developpement backend et l'automatisation de l'agent",
-        "Google Cloud Platform (GCP), notamment Cloud Run pour le deploiement et l'execution des services applicatifs",
-        "Google Cloud SQL (PostgreSQL) pour la conception et la structuration de la base de donnees",
-        "PostgreSQL et MySQL pour la gestion et la modelisation des donnees",
-        "Integration d'APIs externes : GreenAPI pour WhatsApp et Google Calendar / Google Meet",
-        "Services d'intelligence artificielle pour la generation et l'analyse de messages",
-        "Git et GitHub, avec pipelines CI/CD via GitHub Actions pour les deploiements",
-        "Docker et deploiement cloud, dans une logique d'architecture moderne et scalable",
-      ]},
-      "Au cours de ce projet, Ilyesse a egalement participe a la structuration de la base de donnees, a la reflexion autour de l'architecture du produit et a l'integration de differents services necessaires au fonctionnement d'une plateforme SaaS.",
-      "Au-dela de ses competences techniques, Ilyesse s'est distingue par sa capacite d'apprentissage rapide, son autonomie progressive et sa forte implication dans les missions qui lui sont confiees. Il fait preuve d'une grande curiosite pour les technologies modernes et demontre une reelle volonte de comprendre les architectures logicielles en profondeur.",
-      "Je suis convaincu qu'Ilyesse possede toutes les qualites necessaires pour evoluer avec succes dans des environnements technologiques exigeants, que ce soit dans le cadre d'un stage, d'une alternance, d'un premier emploi ou de la poursuite d'etudes dans une formation specialisee.",
-      "Je recommande donc Ilyesse El Adaoui sans reserve et reste disponible pour toute information complementaire.",
-      "Veuillez agreer, Madame, Monsieur, l'expression de mes salutations distinguees.",
+      { type: "salut",  text: "Madame, Monsieur," },
+      { type: "text",   text: "J'ai l'honneur de vous adresser la presente lettre afin de recommander chaleureusement M. Ilyesse El Adaoui, qui effectue actuellement un stage de 5 mois au sein de notre entreprise SpidR en tant que stagiaire Data Engineer, sous ma supervision directe en qualite de CTO." },
+      { type: "text",   text: "Depuis son arrivee, M. El Adaoui a fait preuve d'une rigueur, d'une curiosite intellectuelle et d'une capacite d'adaptation remarquables. Il a ete implique dans des projets concrets lies a la gestion et au traitement de la donnee, et a su s'integrer pleinement a notre equipe technique." },
+      { type: "text",   text: "Sur le plan technique, M. El Adaoui maitrise un ensemble de competences solides et adaptees aux exigences du metier : Python, SQL, NoSQL, MongoDB, Google Cloud Platform (GCP), ainsi que les technologies d'intelligence artificielle telles que LLaMA. Il a su mobiliser ces outils de maniere professionnelle dans le cadre de ses missions, contribuant ainsi directement a la valeur ajoutee de nos projets data." },
+      { type: "text",   text: "Au-dela de ses competences techniques, nous avons particulierement apprecie ses qualites humaines : sens des responsabilites, esprit d'equipe, proactivite et capacite a proposer des solutions innovantes face aux problematiques rencontrees." },
+      { type: "text",   text: "C'est sans reserve que je recommande M. Ilyesse El Adaoui pour l'integration d'un Master 1 dans le domaine de la Data. Son profil, alliant competences techniques pointues et qualites personnelles avouees, est un atout certain pour toute formation d'excellence." },
+      { type: "text",   text: "Je reste a votre disposition pour tout renseignement complementaire." },
+      { type: "text",   text: "Veuillez agreer, Madame, Monsieur, l'expression de mes salutations distinguees." },
     ];
 
-    for (const para of paragraphs) {
-      if (para && para.bullet) {
-        const bulletX = mL + Math.round(3 * MM);
-        const textX   = mL + Math.round(7 * MM);
-        const bulletW = iW - Math.round(7 * MM);
-        ctx1.font = bFS + "px Georgia, serif";
-        for (const item of para.items) {
-          ctx1.fillStyle = "#c9a84c";
-          ctx1.beginPath();
-          ctx1.arc(bulletX, y + bFS * 0.55, Math.round(1.2 * MM), 0, Math.PI * 2);
-          ctx1.fill();
-          ctx1.fillStyle = "#1c1c1c";
-          const lines = wrapText(ctx1, item, bulletW);
-          for (const line of lines) { ctx1.fillText(line, textX, y); y += lnH; }
-          y += Math.round(0.5 * MM);
-        }
-        y += pGap;
+    // ── Measure helper: how many px does a paragraph need? ───
+    function measurePara(ctx, para, width) {
+      ctx.font = bFS + "px Georgia, serif";
+      if (para.type === "salut") {
+        return lnH + pGap;
+      }
+      const lines = wrapText(ctx, para.text, width);
+      return lines.length * lnH + pGap;
+    }
+
+    // ── Flow paragraphs across pages 1 & 2 ───────────────────
+    // We'll dry-run to split the paragraphs
+    const tmpC   = document.createElement("canvas");
+    const tmpCtx = tmpC.getContext("2d");
+
+    // Page 1 has: header + divider + objet box + body start
+    // Page 2 has: mini-header + body continuation
+    // We simulate the first-page available height
+    const objBoxH  = Math.round(9 * MM);
+    const page1StartY = mT + Math.round(2 * MM) + lH + Math.round(5 * MM)   // header
+                      + Math.round(5 * MM) + Math.round(5 * MM)              // divider gaps
+                      + objBoxH + Math.round(7 * MM)                         // objet box
+                      + lnH + pGap;                                           // salutation line
+    const page1MaxY = maxY;
+    const page2StartY = mT + Math.round(2 * MM) + lH + Math.round(8 * MM);   // mini header p2
+    const page2MaxY  = maxY;
+
+    let availP1 = page1MaxY - page1StartY;
+    let availP2 = page2MaxY - page2StartY;
+
+    // Skip salutation in flow (drawn separately below)
+    const bodyParas = paragraphs.filter(p => p.type === "text");
+    const page1Paras = [], page2Paras = [];
+
+    let rem = availP1;
+    let onPage1 = true;
+    for (const para of bodyParas) {
+      const h = measurePara(tmpCtx, para, iW);
+      if (onPage1) {
+        if (rem >= h) { page1Paras.push(para); rem -= h; }
+        else { onPage1 = false; page2Paras.push(para); rem = availP2 - h; }
       } else {
-        ctx1.font = bFS + "px Georgia, serif";
-        for (const line of wrapText(ctx1, para, iW)) {
-          ctx1.fillText(line, mL, y); y += lnH;
-        }
-        y += pGap;
+        page2Paras.push(para);
       }
     }
 
-    // Page 1 footer text
-    ctx1.fillStyle = "rgba(255,255,255,0.45)";
-    ctx1.font = Math.round(2.5 * MM) + "px Arial, sans-serif";
-    ctx1.textBaseline = "middle"; ctx1.textAlign = "center";
-    ctx1.fillText("(c) 2026 SpidR - Document confidentiel - Page 1/2", cW / 2, cH - Math.round(3.5 * MM));
-    ctx1.textAlign = "left";
-
-    // ════════════════════════════════════════════
-    // PAGE 2 — Signature page
-    // ════════════════════════════════════════════
-    const { c: c2, ctx: ctx2 } = makeCanvas();
-    let y2 = mT + Math.round(10 * MM);
-
-    // Small SpidR logo header on page 2
-    if (logoEl && logoEl.complete && logoEl.naturalWidth > 0) {
-      const lH2 = Math.round(10 * MM);
-      const lW2 = Math.round((logoEl.naturalWidth / logoEl.naturalHeight) * lH2);
-      ctx2.drawImage(logoEl, mL, y2, lW2, lH2);
-
-    }
-    ctx2.fillStyle = "#555555";
-    ctx2.font = "italic " + Math.round(3.5 * MM) + "px Georgia, serif";
-    ctx2.textAlign = "right"; ctx2.textBaseline = "middle";
-    ctx2.fillText("Lettre de recommandation - M. Ilyesse El Adaoui", cW - mR, y2 + Math.round(5 * MM));
-    ctx2.textAlign = "left";
-    y2 += Math.round(18 * MM);
+    // ════════════════════════════════════════════════════════
+    // PAGE 1
+    // ════════════════════════════════════════════════════════
+    const { c: c1, ctx: ctx1 } = makeCanvas(1, 3);
+    let y1 = drawHeader(ctx1, true);
 
     // Divider
+    ctx1.strokeStyle = "#e2ddd5"; ctx1.lineWidth = 1;
+    ctx1.beginPath(); ctx1.moveTo(mL, y1); ctx1.lineTo(cW - mR, y1); ctx1.stroke();
+    y1 += Math.round(5 * MM);
+
+    // Objet box
+    ctx1.fillStyle = "#f7f5f1"; ctx1.fillRect(mL, y1, iW, objBoxH);
+    ctx1.fillStyle = "#c9a84c"; ctx1.fillRect(mL, y1, Math.round(2.5 * MM), objBoxH);
+    ctx1.fillStyle = "#1c1c1c";
+    ctx1.font = Math.round(3.9 * MM) + "px Arial, sans-serif";
+    ctx1.textBaseline = "middle";
+    ctx1.fillText("Objet : Lettre de recommandation - M. Ilyesse El Adaoui", mL + Math.round(5 * MM), y1 + objBoxH / 2);
+    y1 += objBoxH + Math.round(7 * MM);
+
+    // Salutation
+    ctx1.fillStyle = "#1c1c1c";
+    ctx1.font = bFS + "px Georgia, serif";
+    ctx1.textBaseline = "top";
+    ctx1.fillText("Madame, Monsieur,", mL, y1);
+    y1 += lnH + pGap;
+
+    // Page 1 body paragraphs
+    for (const para of page1Paras) {
+      for (const line of wrapText(ctx1, para.text, iW)) {
+        ctx1.fillText(line, mL, y1); y1 += lnH;
+      }
+      y1 += pGap;
+    }
+
+    // Continuation arrow hint at bottom
+    if (page2Paras.length > 0) {
+      ctx1.fillStyle = "#aaaaaa";
+      ctx1.font = Math.round(3 * MM) + "px Arial, sans-serif";
+      ctx1.textAlign = "right";
+      ctx1.fillText("Suite page suivante →", cW - mR, maxY + Math.round(3 * MM));
+      ctx1.textAlign = "left";
+    }
+
+    // ════════════════════════════════════════════════════════
+    // PAGE 2
+    // ════════════════════════════════════════════════════════
+    const { c: c2, ctx: ctx2 } = makeCanvas(2, 3);
+    let y2 = drawHeader(ctx2, false);
+
+    // Thin reference line
     ctx2.strokeStyle = "#e2ddd5"; ctx2.lineWidth = 1;
     ctx2.beginPath(); ctx2.moveTo(mL, y2); ctx2.lineTo(cW - mR, y2); ctx2.stroke();
-    y2 += Math.round(18 * MM);
+    y2 += Math.round(6 * MM);
 
-    // Big "Signature" title
-    ctx2.fillStyle = "#1a1a2e";
-    ctx2.font = "bold " + Math.round(6 * MM) + "px Georgia, serif";
+    // Page 2 body paragraphs (continuation)
+    ctx2.fillStyle = "#1c1c1c";
+    ctx2.font = bFS + "px Georgia, serif";
     ctx2.textBaseline = "top";
-    ctx2.fillText("Signature du Directeur Technique", mL, y2);
-    y2 += Math.round(12 * MM);
+    for (const para of page2Paras) {
+      for (const line of wrapText(ctx2, para.text, iW)) {
+        ctx2.fillText(line, mL, y2); y2 += lnH;
+      }
+      y2 += pGap;
+    }
 
-    // Signer info block
-    ctx2.fillStyle = "#333333";
-    ctx2.font = Math.round(4.5 * MM) + "px Georgia, serif";
-    ctx2.fillText("Geoffroy Detrousselle", mL, y2);
-    y2 += Math.round(7 * MM);
-    ctx2.fillStyle = "#777777";
-    ctx2.font = Math.round(3.8 * MM) + "px Arial, sans-serif";
-    ctx2.fillText("CEO  —  Spidr", mL, y2);
-    y2 += Math.round(20 * MM);
+    // ════════════════════════════════════════════════════════
+    // PAGE 3 — Signature
+    // ════════════════════════════════════════════════════════
+    const { c: c3, ctx: ctx3 } = makeCanvas(3, 3);
+    let y3 = mT + Math.round(10 * MM);
 
-    // Signature box label
-    ctx2.fillStyle = "#8a8a8a";
-    ctx2.font = Math.round(3 * MM) + "px Arial, sans-serif";
-    ctx2.fillText("SIGNATURE :", mL, y2);
-    y2 += Math.round(5 * MM);
+    // Mini header
+    if (logoEl && logoEl.complete && logoEl.naturalWidth > 0) {
+      const lW3 = Math.round((logoEl.naturalWidth / logoEl.naturalHeight) * Math.round(10 * MM));
+      ctx3.drawImage(logoEl, mL, y3, lW3, Math.round(10 * MM));
+    }
+    ctx3.fillStyle = "#555555";
+    ctx3.font = "italic " + Math.round(3.5 * MM) + "px Georgia, serif";
+    ctx3.textAlign = "right"; ctx3.textBaseline = "middle";
+    ctx3.fillText("Lettre de recommandation - M. Ilyesse El Adaoui", cW - mR, y3 + Math.round(5 * MM));
+    ctx3.textAlign = "left"; ctx3.textBaseline = "top";
+    y3 += Math.round(18 * MM);
 
-    // Signature image — drawn on white rect
+    ctx3.strokeStyle = "#e2ddd5"; ctx3.lineWidth = 1;
+    ctx3.beginPath(); ctx3.moveTo(mL, y3); ctx3.lineTo(cW - mR, y3); ctx3.stroke();
+    y3 += Math.round(18 * MM);
+
+    ctx3.fillStyle = "#1a1a2e";
+    ctx3.font = "bold " + Math.round(6 * MM) + "px Georgia, serif";
+    ctx3.fillText("Signature du Directeur Technique", mL, y3);
+    y3 += Math.round(12 * MM);
+
+    ctx3.fillStyle = "#333333";
+    ctx3.font = Math.round(4.5 * MM) + "px Georgia, serif";
+    ctx3.fillText("Geoffroy Detrousselle", mL, y3);
+    y3 += Math.round(7 * MM);
+    ctx3.fillStyle = "#777777";
+    ctx3.font = Math.round(3.8 * MM) + "px Arial, sans-serif";
+    ctx3.fillText("Chief Technology Officer (CTO)  -  SpidR", mL, y3);
+    y3 += Math.round(20 * MM);
+
+    ctx3.fillStyle = "#8a8a8a";
+    ctx3.font = Math.round(3 * MM) + "px Arial, sans-serif";
+    ctx3.fillText("SIGNATURE :", mL, y3);
+    y3 += Math.round(5 * MM);
+
+    // Signature image
     const sigImg = new Image();
     sigImg.src = sigDataURL;
     await new Promise(function(res) { sigImg.onload = res; sigImg.onerror = res; });
 
     const sigBoxW = Math.round(120 * MM);
     const sigBoxH = Math.round(45 * MM);
-    // White rounded background for sig
-    ctx2.fillStyle = "#ffffff";
-    ctx2.strokeStyle = "#d0cdc8";
-    ctx2.lineWidth = 1;
-    ctx2.beginPath();
-    ctx2.roundRect(mL, y2, sigBoxW, sigBoxH, Math.round(3 * MM));
-    ctx2.fill(); ctx2.stroke();
+    ctx3.fillStyle = "#ffffff";
+    ctx3.strokeStyle = "#d0cdc8"; ctx3.lineWidth = 1;
+    ctx3.beginPath();
+    ctx3.roundRect(mL, y3, sigBoxW, sigBoxH, Math.round(3 * MM));
+    ctx3.fill(); ctx3.stroke();
 
-    // Draw actual signature centered in box
     if (sigImg.width > 0 && sigImg.height > 0) {
-      const ratio  = Math.min((sigBoxW - Math.round(8 * MM)) / sigImg.width, (sigBoxH - Math.round(8 * MM)) / sigImg.height);
-      const dW     = sigImg.width  * ratio;
-      const dH     = sigImg.height * ratio;
-      const dX     = mL + (sigBoxW - dW) / 2;
-      const dY     = y2  + (sigBoxH - dH) / 2;
-      ctx2.drawImage(sigImg, dX, dY, dW, dH);
+      const ratio = Math.min((sigBoxW - Math.round(8 * MM)) / sigImg.width, (sigBoxH - Math.round(8 * MM)) / sigImg.height);
+      const dW = sigImg.width  * ratio;
+      const dH = sigImg.height * ratio;
+      ctx3.drawImage(sigImg, mL + (sigBoxW - dW) / 2, y3 + (sigBoxH - dH) / 2, dW, dH);
     }
-    y2 += sigBoxH + Math.round(15 * MM);
+    y3 += sigBoxH + Math.round(15 * MM);
 
-    // Date signed
     const now = new Date();
     const dateStr = now.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-    ctx2.fillStyle = "#555555";
-    ctx2.font = Math.round(3.5 * MM) + "px Arial, sans-serif";
-    ctx2.fillText("Signe electroniquement le " + dateStr, mL, y2);
-    y2 += Math.round(12 * MM);
+    ctx3.fillStyle = "#555555";
+    ctx3.font = Math.round(3.5 * MM) + "px Arial, sans-serif";
+    ctx3.fillText("Signe electroniquement le " + dateStr, mL, y3);
+    y3 += Math.round(12 * MM);
 
-    // Stamp
-    drawStamp(ctx2, cW - mR - Math.round(30 * MM), y2, Math.round(22 * MM));
+    drawStamp(ctx3, cW - mR - Math.round(30 * MM), y3, Math.round(22 * MM));
 
-    // Page 2 footer text
-    ctx2.fillStyle = "rgba(255,255,255,0.45)";
-    ctx2.font = Math.round(2.5 * MM) + "px Arial, sans-serif";
-    ctx2.textBaseline = "middle"; ctx2.textAlign = "center";
-    ctx2.fillText("(c) 2026 SpidR - Document confidentiel - Page 2/2", cW / 2, cH - Math.round(3.5 * MM));
-    ctx2.textAlign = "left";
-
-    // ── Build 2-page PDF ──
+    // ── Build 3-page PDF ──────────────────────────────────────
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     doc.addImage(c1.toDataURL("image/jpeg", 0.97), "JPEG", 0, 0, A4_W, A4_H);
     doc.addPage();
     doc.addImage(c2.toDataURL("image/jpeg", 0.97), "JPEG", 0, 0, A4_W, A4_H);
+    doc.addPage();
+    doc.addImage(c3.toDataURL("image/jpeg", 0.97), "JPEG", 0, 0, A4_W, A4_H);
     return doc.output("blob");
   }
 
