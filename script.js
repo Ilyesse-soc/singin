@@ -1,7 +1,3 @@
-/* ─────────────────────────────────────────────────────────────
-   SignDoc — script.js
-   Renders full letter + signature into ONE canvas → single-page PDF
-───────────────────────────────────────────────────────────── */
 (function () {
   "use strict";
 
@@ -93,7 +89,7 @@
     if (!signatureDataURL) return;
     btnGenerate.disabled = true;
     const origHTML = btnGenerate.innerHTML;
-    btnGenerate.textContent = "Génération en cours…";
+    btnGenerate.textContent = "Generation en cours...";
     try {
       if (typeof window.jspdf === "undefined") {
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
@@ -110,195 +106,211 @@
     }
   });
 
+  /* ================================================================
+     buildPDF — draws everything on a single A4 canvas then wraps
+     it in a one-page PDF via jsPDF.
+     Sizing is carefully calculated so the full letter + signature
+     always fits inside the A4 frame.
+  ================================================================ */
   async function buildPDF(sigDataURL) {
-    const A4_W = 210, A4_H = 297;
-    const MARGIN = 18;
-    const DPI    = 150;
-    const MM     = DPI / 25.4;
+    const A4_W = 210;   // mm
+    const A4_H = 297;   // mm
+    const DPI  = 180;
+    const MM   = DPI / 25.4;   // px per mm
 
     const cW = Math.round(A4_W * MM);
     const cH = Math.round(A4_H * MM);
-    const m  = Math.round(MARGIN * MM);
+
+    // Margins (px)
+    const mL = Math.round(20 * MM);
+    const mR = Math.round(14 * MM);
+    const mT = Math.round(10 * MM);
+    const iW = cW - mL - mR;   // usable text width
 
     const c   = document.createElement("canvas");
-    c.width   = cW; c.height = cH;
+    c.width   = cW;
+    c.height  = cH;
     const ctx = c.getContext("2d");
 
-    // White bg
+    // White background
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, cW, cH);
 
     // Gold top bar
     ctx.fillStyle = "#c9a84c";
-    ctx.fillRect(0, 0, cW, Math.round(4 * MM));
+    ctx.fillRect(0, 0, cW, Math.round(3.5 * MM));
 
     // Navy left accent
     ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, Math.round(3 * MM), cH);
+    ctx.fillRect(0, 0, Math.round(2.5 * MM), cH);
 
-    let y = m + Math.round(6 * MM);
-    const iW = cW - m * 2;
+    let y = mT + Math.round(4 * MM);
 
-    // Logo
+    // ── HEADER: Logo + SpidR + date ──
+    const lH   = Math.round(12 * MM);
     const logoEl = document.querySelector("#letter-logo");
     if (logoEl && logoEl.complete && logoEl.naturalWidth > 0) {
-      const lH = Math.round(14 * MM);
       const lW = Math.round((logoEl.naturalWidth / logoEl.naturalHeight) * lH);
-      ctx.drawImage(logoEl, m, y, lW, lH);
-
+      ctx.drawImage(logoEl, mL, y, lW, lH);
       ctx.fillStyle = "#1a1a2e";
-      ctx.font = `bold ${Math.round(6.5 * MM)}px Georgia, serif`;
+      ctx.font = "bold " + Math.round(5.8 * MM) + "px Georgia, serif";
       ctx.textBaseline = "middle";
-      ctx.fillText("SpidR", m + lW + Math.round(3 * MM), y + lH / 2 - Math.round(2 * MM));
-      ctx.fillStyle = "#8a8a8a";
-      ctx.font = `${Math.round(3.3 * MM)}px Arial, sans-serif`;
-      ctx.fillText("TECHNOLOGY", m + lW + Math.round(3 * MM), y + lH / 2 + Math.round(3 * MM));
-
-      ctx.fillStyle = "#555555";
-      ctx.font = `italic ${Math.round(4 * MM)}px Georgia, serif`;
-      ctx.textAlign = "right";
-      ctx.fillText("Paris, le 19 février 2026", cW - m, y + lH / 2);
-      ctx.textAlign = "left";
-      y += lH + Math.round(8 * MM);
+      ctx.fillText("SpidR", mL + lW + Math.round(2.5 * MM), y + lH / 2);
     } else {
       ctx.fillStyle = "#1a1a2e";
-      ctx.font = `bold ${Math.round(8 * MM)}px Georgia, serif`;
-      ctx.textBaseline = "top";
-      ctx.fillText("SpidR", m, y);
-      ctx.fillStyle = "#555";
-      ctx.font = `italic ${Math.round(4 * MM)}px Georgia, serif`;
-      ctx.textAlign = "right";
-      ctx.fillText("Paris, le 19 février 2026", cW - m, y + Math.round(2 * MM));
-      ctx.textAlign = "left";
-      y += Math.round(18 * MM);
+      ctx.font = "bold " + Math.round(7 * MM) + "px Georgia, serif";
+      ctx.textBaseline = "middle";
+      ctx.fillText("SpidR", mL, y + lH / 2);
     }
+    // Date right-aligned
+    ctx.fillStyle = "#555555";
+    ctx.font = "italic " + Math.round(3.6 * MM) + "px Georgia, serif";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Paris, le 19 fevrier 2026", cW - mR, y + lH / 2);
+    ctx.textAlign = "left";
+    y += lH + Math.round(4 * MM);
 
     // Divider
     ctx.strokeStyle = "#e2ddd5"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(m, y); ctx.lineTo(cW - m, y); ctx.stroke();
-    y += Math.round(5 * MM);
+    ctx.beginPath(); ctx.moveTo(mL, y); ctx.lineTo(cW - mR, y); ctx.stroke();
+    y += Math.round(4 * MM);
 
-    // Objet box
-    const objH = Math.round(9 * MM);
+    // ── OBJET box ──
+    const objFS = Math.round(3.7 * MM);
+    const objH  = Math.round(7.5 * MM);
     ctx.fillStyle = "#f7f5f1";
-    ctx.fillRect(m, y, iW, objH);
+    ctx.fillRect(mL, y, iW, objH);
     ctx.fillStyle = "#c9a84c";
-    ctx.fillRect(m, y, Math.round(3 * MM), objH);
+    ctx.fillRect(mL, y, Math.round(2.5 * MM), objH);
     ctx.fillStyle = "#1c1c1c";
-    ctx.font = `${Math.round(4.1 * MM)}px Arial, sans-serif`;
+    ctx.font = objFS + "px Arial, sans-serif";
     ctx.textBaseline = "middle";
-    ctx.fillText("Objet : Lettre de recommandation – M. Ilyesse El Adaoui", m + Math.round(6 * MM), y + objH / 2);
-    y += objH + Math.round(7 * MM);
+    ctx.fillText("Objet : Lettre de recommandation - M. Ilyesse El Adaoui", mL + Math.round(5 * MM), y + objH / 2);
+    y += objH + Math.round(5 * MM);
 
-    // Body
-    const bFS  = Math.round(4.4 * MM);
-    const lnH  = bFS * 1.85;
+    // ── BODY ──
+    // Font sized so the entire letter fits: 3.45 mm ≈ 11pt at 180dpi
+    const bFS = Math.round(3.45 * MM);
+    const lnH = bFS * 1.70;
+    const pGap = Math.round(1.8 * MM);
+
     ctx.fillStyle = "#1c1c1c";
     ctx.textBaseline = "top";
+    ctx.font = bFS + "px Georgia, serif";
 
     // Salutation
-    ctx.font = `${bFS}px Georgia, serif`;
-    ctx.fillText("Madame, Monsieur,", m, y);
-    y += lnH + Math.round(3 * MM);
+    ctx.fillText("Madame, Monsieur,", mL, y);
+    y += lnH + pGap;
 
     const paragraphs = [
-      "J'ai l'honneur de vous adresser la présente lettre afin de recommander chaleureusement M. Ilyesse El Adaoui, qui effectue actuellement un stage de 5 mois au sein de notre entreprise SpidR en tant que stagiaire Data Engineer, sous ma supervision directe en qualité de CTO.",
-      "Depuis son arrivée, M. El Adaoui a fait preuve d'une rigueur, d'une curiosité intellectuelle et d'une capacité d'adaptation remarquables. Il a été impliqué dans des projets concrets liés à la gestion et au traitement de la donnée, et a su s'intégrer pleinement à notre équipe technique.",
-      "Sur le plan technique, M. El Adaoui maîtrise un ensemble de compétences solides et adaptées aux exigences du métier : Python, SQL, NoSQL, MongoDB, Google Cloud Platform (GCP), ainsi que les technologies d'intelligence artificielle telles que LLaMA. Il a su mobiliser ces outils de manière professionnelle dans le cadre de ses missions, contribuant ainsi directement à la valeur ajoutée de nos projets data.",
-      "Au-delà de ses compétences techniques, nous avons particulièrement apprécié ses qualités humaines : sens des responsabilités, esprit d'équipe, proactivité et capacité à proposer des solutions innovantes face aux problématiques rencontrées.",
-      "C'est sans réserve que je recommande M. Ilyesse El Adaoui pour l'intégration d'un Master 1 dans le domaine de la Data. Son profil, alliant compétences techniques pointues et qualités personnelles avouées, est un atout certain pour toute formation d'excellence.",
-      "Je reste à votre disposition pour tout renseignement complémentaire.",
-      "Veuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées.",
+      "J'ai l'honneur de vous adresser la presente lettre afin de recommander chaleureusement M. Ilyesse El Adaoui, qui effectue actuellement un stage de 5 mois au sein de notre entreprise SpidR en tant que stagiaire Data Engineer, sous ma supervision directe en qualite de CTO.",
+      "Depuis son arrivee, M. El Adaoui a fait preuve d'une rigueur, d'une curiosite intellectuelle et d'une capacite d'adaptation remarquables. Il a ete implique dans des projets concrets lies a la gestion et au traitement de la donnee, et a su s'integrer pleinement a notre equipe technique.",
+      "Sur le plan technique, M. El Adaoui maitrise un ensemble de competences solides et adaptees aux exigences du metier : Python, SQL, NoSQL, MongoDB, Google Cloud Platform (GCP), ainsi que les technologies d'intelligence artificielle telles que LLaMA. Il a su mobiliser ces outils de maniere professionnelle dans le cadre de ses missions, contribuant ainsi directement a la valeur ajoutee de nos projets data.",
+      "Au-dela de ses competences techniques, nous avons particulierement apprécie ses qualites humaines : sens des responsabilites, esprit d'equipe, proactivite et capacite a proposer des solutions innovantes face aux problematiques rencontrees.",
+      "C'est sans reserve que je recommande M. Ilyesse El Adaoui pour l'integration d'un Master 1 dans le domaine de la Data. Son profil, alliant competences techniques pointues et qualites personnelles avouees, est un atout certain pour toute formation d'excellence.",
+      "Je reste a votre disposition pour tout renseignement complementaire.",
+      "Veuillez agreer, Madame, Monsieur, l'expression de mes salutations distinguees.",
     ];
 
-    ctx.font = `${bFS}px Georgia, serif`;
     for (const para of paragraphs) {
-      for (const line of wrapText(ctx, para, iW)) {
-        ctx.fillText(line, m, y); y += lnH;
+      const lines = wrapText(ctx, para, iW);
+      for (const line of lines) {
+        ctx.fillText(line, mL, y);
+        y += lnH;
       }
-      y += Math.round(2.5 * MM);
+      y += pGap;
     }
 
-    y += Math.round(7 * MM);
-
-    // Divider
-    ctx.strokeStyle = "#e2ddd5"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(m, y); ctx.lineTo(cW - m, y); ctx.stroke();
     y += Math.round(5 * MM);
+
+    // ── SIGNATURE divider ──
+    ctx.strokeStyle = "#e2ddd5"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(mL, y); ctx.lineTo(cW - mR, y); ctx.stroke();
+    y += Math.round(4 * MM);
 
     // Signature label
     ctx.fillStyle = "#8a8a8a";
-    ctx.font = `${Math.round(3.1 * MM)}px Arial, sans-serif`;
-    ctx.fillText("SIGNATURE DU CTO :", m, y);
-    y += Math.round(5 * MM);
+    ctx.font = Math.round(2.8 * MM) + "px Arial, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText("SIGNATURE DU CTO :", mL, y);
+    y += Math.round(4 * MM);
 
     // Signature image
     const sigImg = new Image();
     sigImg.src = sigDataURL;
-    await new Promise(r => { sigImg.onload = r; sigImg.onerror = r; });
-    const sigH = Math.round(22 * MM);
-    const sigW = sigImg.width > 0 ? Math.round((sigImg.width / sigImg.height) * sigH) : Math.round(60 * MM);
-    ctx.drawImage(sigImg, m, y, sigW, sigH);
-    y += sigH + Math.round(3 * MM);
+    await new Promise(function(res) { sigImg.onload = res; sigImg.onerror = res; });
+    const sigH = Math.round(20 * MM);
+    const sigW = sigImg.width > 0 ? Math.round((sigImg.width / sigImg.height) * sigH) : Math.round(55 * MM);
+    ctx.drawImage(sigImg, mL, y, sigW, sigH);
+    y += sigH + Math.round(2 * MM);
 
-    // Signer name
+    // Signer name & role
     ctx.fillStyle = "#1a1a2e";
-    ctx.font = `bold ${Math.round(5 * MM)}px Georgia, serif`;
-    ctx.fillText("Geoffroy Detrousselle", m, y);
-    y += Math.round(7 * MM);
-    ctx.fillStyle = "#666666";
-    ctx.font = `${Math.round(3.7 * MM)}px Arial, sans-serif`;
-    ctx.fillText("Chief Technology Officer (CTO)  —  SpidR", m, y);
+    ctx.font = "bold " + Math.round(4.2 * MM) + "px Georgia, serif";
+    ctx.textBaseline = "top";
+    ctx.fillText("Geoffroy Detrousselle", mL, y);
+    y += Math.round(6 * MM);
+    ctx.fillStyle = "#555555";
+    ctx.font = Math.round(3.3 * MM) + "px Arial, sans-serif";
+    ctx.fillText("Chief Technology Officer (CTO)  -  SpidR", mL, y);
 
-    // Stamp
-    drawStamp(ctx, cW - m - Math.round(26 * MM), cH - m - Math.round(28 * MM), Math.round(20 * MM));
+    // Stamp bottom-right (above footer)
+    const footerH = Math.round(7 * MM);
+    const stampR  = Math.round(15 * MM);
+    drawStamp(ctx, cW - mR - stampR, cH - footerH - stampR - Math.round(4 * MM), stampR);
 
     // Footer bar
     ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, cH - Math.round(8 * MM), cW, Math.round(8 * MM));
+    ctx.fillRect(0, cH - footerH, cW, footerH);
     ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.font = `${Math.round(2.7 * MM)}px Arial, sans-serif`;
+    ctx.font = Math.round(2.4 * MM) + "px Arial, sans-serif";
     ctx.textBaseline = "middle";
     ctx.textAlign = "center";
-    ctx.fillText("© 2026 SpidR — Document confidentiel — Signé électroniquement via SignDoc", cW / 2, cH - Math.round(4 * MM));
+    ctx.fillText("(c) 2026 SpidR - Document confidentiel - Signe electroniquement via SignDoc", cW / 2, cH - footerH / 2);
     ctx.textAlign = "left";
 
     // Build PDF
     const imgData = c.toDataURL("image/jpeg", 0.97);
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const jspdf   = window.jspdf;
+    const doc     = new jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     doc.addImage(imgData, "JPEG", 0, 0, A4_W, A4_H);
     return doc.output("blob");
   }
 
   function drawStamp(ctx, cx, cy, r) {
     ctx.save();
-    ctx.globalAlpha = 0.13;
+    ctx.globalAlpha = 0.12;
     ctx.strokeStyle = "#1a1a2e"; ctx.lineWidth = r * 0.05;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, cy, r * 0.75, 0, Math.PI * 2); ctx.stroke();
-    ctx.globalAlpha = 0.15;
+    ctx.globalAlpha = 0.14;
     ctx.lineWidth = r * 0.11; ctx.lineCap = "round"; ctx.lineJoin = "round";
     ctx.beginPath();
     ctx.moveTo(cx - r * 0.3, cy);
     ctx.lineTo(cx - r * 0.05, cy + r * 0.28);
     ctx.lineTo(cx + r * 0.38, cy - r * 0.28);
     ctx.stroke();
-    ctx.globalAlpha = 0.18;
+    ctx.globalAlpha = 0.17;
     ctx.fillStyle = "#1a1a2e";
-    ctx.font = `bold ${Math.round(r * 0.22)}px Arial, sans-serif`;
+    ctx.font = "bold " + Math.round(r * 0.22) + "px Arial, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText("SIGNÉ", cx, cy + r * 0.55);
+    ctx.fillText("SIGNE", cx, cy + r * 0.55);
     ctx.restore();
   }
 
   function wrapText(ctx, text, maxWidth) {
     const words = text.split(" ");
-    const lines = []; let line = "";
+    const lines = [];
+    let line = "";
     for (const word of words) {
       const test = line ? line + " " + word : word;
-      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
-      else line = test;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
     }
     if (line) lines.push(line);
     return lines;
@@ -308,13 +320,14 @@
     if (!pdfBlob) return;
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement("a");
-    a.href = url; a.download = "Recommendation_Letter_Ilyesse_ElAdaoui.pdf";
+    a.href = url;
+    a.download = "Recommendation_Letter_Ilyesse_ElAdaoui.pdf";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 8000);
   });
 
   btnWhatsApp.addEventListener("click", () => {
-    const text = encodeURIComponent("Bonjour, veuillez trouver ci-joint la lettre de recommandation signée de M. Ilyesse El Adaoui.\n\nFichier : Recommendation_Letter_Ilyesse_ElAdaoui.pdf");
+    const text = encodeURIComponent("Bonjour, veuillez trouver ci-joint la lettre de recommandation signee de M. Ilyesse El Adaoui.\n\nFichier : Recommendation_Letter_Ilyesse_ElAdaoui.pdf");
     window.open("https://wa.me/?text=" + text, "_blank", "noopener,noreferrer");
   });
 
