@@ -13,7 +13,8 @@
   const statusEmpty     = document.getElementById("status-empty");
   const sigPreviewArea  = document.getElementById("sig-preview-area");
   const sigPreviewImg   = document.getElementById("sig-preview-img");
-  const downloadSection = document.getElementById("download-section");
+  const downloadSection  = document.getElementById("download-section");
+  const whatsappInline   = document.getElementById("whatsapp-inline");
 
   let signatureDataURL = null;
   let pdfBlob          = null;
@@ -54,6 +55,7 @@
     sigPreviewArea.classList.remove("visible");
     sigPreviewImg.src = "";
     hide(downloadSection);
+    hide(whatsappInline);
     pdfBlob = null;
   });
 
@@ -71,6 +73,7 @@
     sigPreviewArea.classList.remove("visible");
     sigPreviewImg.src = "";
     hide(downloadSection);
+    hide(whatsappInline);
     pdfBlob = null;
   });
 
@@ -104,7 +107,8 @@
       }
       pdfBlob = await buildPDF(signatureDataURL);
       show(downloadSection);
-      downloadSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      show(whatsappInline);
+      whatsappInline.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (err) {
       console.error("PDF error:", err);
       alert("Erreur PDF : " + err.message);
