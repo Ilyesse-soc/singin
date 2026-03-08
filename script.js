@@ -374,9 +374,47 @@
     setTimeout(() => URL.revokeObjectURL(url), 8000);
   });
 
-  btnWhatsApp.addEventListener("click", () => {
-    const text = encodeURIComponent("Bonjour, veuillez trouver ci-joint la lettre de recommandation signee de M. Ilyesse El Adaoui.\n\nFichier : Recommendation_Letter_Ilyesse_ElAdaoui.pdf");
-    window.open("https://wa.me/?text=" + text, "_blank", "noopener,noreferrer");
+  btnWhatsApp.addEventListener("click", async () => {
+    if (!pdfBlob) return;
+
+    const fileName = "Recommendation_Letter_Ilyesse_ElAdaoui.pdf";
+    const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+    // Web Share API with file — works on mobile (Android/iOS) and shares via WhatsApp etc.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: "Lettre de recommandation — Ilyesse El Adaoui",
+          text: "Bonjour, veuillez trouver ci-joint la lettre de recommandation signee de M. Ilyesse El Adaoui.",
+          files: [file],
+        });
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return; // user cancelled — do nothing
+        // fallthrough to next method
+      }
+    }
+
+    // Fallback: Web Share API text-only (no file, still opens native share sheet on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Lettre de recommandation — Ilyesse El Adaoui",
+          text: "Bonjour, veuillez trouver ci-joint la lettre de recommandation signee de M. Ilyesse El Adaoui.\n\nFichier : " + fileName,
+        });
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return;
+      }
+    }
+
+    // Last resort for desktop: download the file and show an alert
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
+    alert("Le PDF a ete telecharge. Partagez-le manuellement via WhatsApp sur votre telephone.");
   });
 
   function show(el) { el.classList.remove("hidden"); }
