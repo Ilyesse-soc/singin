@@ -1,0 +1,494 @@
+/* ─── Reset & Base ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:      #1a1a2e;
+  --navy-mid:  #16213e;
+  --gold:      #c9a84c;
+  --gold-lt:   #e8c97a;
+  --ink:       #1c1c1c;
+  --ink-mid:   #3d3d3d;
+  --ink-light: #6b6b6b;
+  --border:    #e2ddd5;
+  --bg:        #f5f3ef;
+  --paper:     #ffffff;
+  --green:     #2d7a4f;
+  --green-lt:  #e8f5ee;
+  --red:       #c0392b;
+  --red-lt:    #fdf0ef;
+  --wa-green:  #25d366;
+  --radius:    12px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-md: 0 8px 32px rgba(0,0,0,.10);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,.13);
+  --font-serif: 'EB Garamond', Georgia, serif;
+  --font-sans:  'DM Sans', system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.site-header {
+  background: var(--navy);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,.2);
+}
+.header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-icon { width: 32px; height: 32px; flex-shrink: 0; }
+.brand-name {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #fff;
+  letter-spacing: .5px;
+}
+.header-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.08);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+.badge-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .6; transform: scale(.85); }
+}
+
+/* ─── Instruction banner ─────────────────────────────────── */
+.instruction-banner {
+  max-width: 860px;
+  margin: 28px auto 0;
+  padding: 0 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .875rem;
+  color: var(--navy);
+  background: #eef3fb;
+  border: 1px solid #c5d6f0;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  line-height: 1.5;
+}
+.instruction-banner svg { flex-shrink: 0; color: #3b6fcf; margin-top: 1px; }
+.instruction-banner strong { font-weight: 600; }
+
+/* ─── Page wrap ──────────────────────────────────────────── */
+.page-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ─── Letter document ────────────────────────────────────── */
+.letter-document {
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 56px 64px;
+  position: relative;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+/* subtle watermark lines */
+.letter-document::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 31px,
+    rgba(0,0,0,.018) 31px,
+    rgba(0,0,0,.018) 32px
+  );
+  pointer-events: none;
+}
+/* gold top accent */
+.letter-document::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--navy), var(--gold), var(--navy));
+}
+
+.letter-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.company-logo-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.company-logo-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  background: var(--navy);
+  color: var(--gold);
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  flex-shrink: 0;
+}
+.company-name {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--navy);
+  letter-spacing: .5px;
+}
+.company-sub {
+  font-size: .75rem;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.letter-date-loc {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--ink-mid);
+  font-style: italic;
+  text-align: right;
+  padding-top: 4px;
+}
+
+.letter-subject {
+  font-family: var(--font-sans);
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: #f7f5f1;
+  border-left: 3px solid var(--gold);
+  padding: 10px 16px;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 32px;
+}
+
+.letter-salutation {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 20px;
+}
+
+.letter-body {
+  font-family: var(--font-serif);
+  font-size: 1.075rem;
+  color: var(--ink);
+  line-height: 1.85;
+}
+.letter-body p { margin-bottom: 1.1em; }
+.letter-body p:last-child { margin-bottom: 0; }
+
+/* ─── Signature block in letter ──────────────────────────── */
+.letter-sign-block {
+  margin-top: 44px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.signer-title {
+  font-family: var(--font-sans);
+  font-size: .82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ink-light);
+  margin-bottom: 12px;
+}
+.signer-name-line {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+.signer-role {
+  font-size: .85rem;
+  color: var(--ink-light);
+  margin-top: 2px;
+}
+
+.sig-preview-area {
+  margin-top: 16px;
+  min-height: 80px;
+  display: none;
+  align-items: center;
+}
+.sig-preview-area.visible { display: flex; }
+.sig-preview-area img {
+  max-height: 90px;
+  max-width: 280px;
+  object-fit: contain;
+}
+
+/* ─── Signing panel ──────────────────────────────────────── */
+.signing-panel {
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 32px;
+  border: 1px solid var(--border);
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: .95rem;
+  color: var(--navy);
+  margin-bottom: 20px;
+}
+
+.canvas-wrapper {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: #fafaf8;
+  transition: border-color .2s;
+  overflow: hidden;
+}
+.canvas-wrapper:hover,
+.canvas-wrapper.active { border-color: var(--gold); border-style: solid; }
+.canvas-wrapper.has-sig  { border-color: var(--green); border-style: solid; background: #fdfdfc; }
+
+#signature-canvas {
+  display: block;
+  width: 100%;
+  height: 180px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.canvas-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .88rem;
+  color: var(--ink-light);
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.canvas-hint.hidden { opacity: 0; }
+
+/* ─── Buttons ────────────────────────────────────────────── */
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-mid);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: #f5f3ef; border-color: #ccc; }
+
+.btn-secondary {
+  background: var(--navy);
+  color: #fff;
+}
+.btn-secondary:hover { background: #24244a; }
+
+.btn-primary {
+  background: var(--gold);
+  color: var(--navy);
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) { background: var(--gold-lt); }
+.btn-primary:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.btn-whatsapp {
+  background: var(--wa-green);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-whatsapp:hover { background: #1ebe59; }
+
+/* ─── Status messages ────────────────────────────────────── */
+.status-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .84rem;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 14px;
+  background: var(--green-lt);
+  color: var(--green);
+}
+.status-msg.status-error { background: var(--red-lt); color: var(--red); }
+.status-msg.hidden { display: none; }
+
+/* ─── Download section ───────────────────────────────────── */
+.download-section {
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  animation: fadeUp .35s ease;
+}
+.download-section.hidden { display: none; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dl-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.dl-icon {
+  width: 52px; height: 52px;
+  border-radius: 10px;
+  background: #f0ede6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy);
+  flex-shrink: 0;
+}
+.dl-info { flex: 1; min-width: 160px; }
+.dl-filename {
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--navy);
+}
+.dl-size {
+  font-size: .8rem;
+  color: var(--ink-light);
+  margin-top: 2px;
+}
+
+.whatsapp-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.whatsapp-note {
+  font-size: .82rem;
+  color: var(--ink-light);
+}
+
+/* ─── Footer ─────────────────────────────────────────────── */
+.site-footer {
+  background: var(--navy);
+  color: rgba(255,255,255,.45);
+  font-size: .78rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 32px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .letter-document { padding: 32px 24px; }
+  .letter-header-row { flex-direction: column; }
+  .letter-date-loc { text-align: left; }
+  .panel-actions { flex-direction: column; }
+  .panel-actions .btn { width: 100%; justify-content: center; }
+  .dl-card { flex-direction: column; align-items: flex-start; }
+  .dl-card .btn { width: 100%; justify-content: center; }
+  .header-badge { display: none; }
+  .site-footer { flex-direction: column; text-align: center; }
+}
+
+/* ─── PDF-only overrides (applied just before render) ─────── */
+.pdf-mode .site-header,
+.pdf-mode .instruction-banner,
+.pdf-mode .signing-panel,
+.pdf-mode .download-section,
+.pdf-mode .site-footer { display: none !important; }
+
+.pdf-mode .page-wrap {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+.pdf-mode .letter-document {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 48px 56px !important;
+}
