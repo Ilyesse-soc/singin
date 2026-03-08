@@ -77,7 +77,15 @@
   btnValidate.addEventListener("click", () => {
     hide(statusEmpty); hide(statusValidated);
     if (pad.isEmpty()) { show(statusEmpty); return; }
-    signatureDataURL = pad.toDataURL("image/png");
+    // Export signature onto a white background canvas so it's visible in the PDF
+    const tmpC = document.createElement("canvas");
+    tmpC.width  = canvas.width;
+    tmpC.height = canvas.height;
+    const tmpX  = tmpC.getContext("2d");
+    tmpX.fillStyle = "#ffffff";
+    tmpX.fillRect(0, 0, tmpC.width, tmpC.height);
+    tmpX.drawImage(canvas, 0, 0);
+    signatureDataURL = tmpC.toDataURL("image/png");
     sigPreviewImg.src = signatureDataURL;
     sigPreviewArea.classList.add("visible");
     btnGenerate.disabled = false;
@@ -242,6 +250,9 @@
     await new Promise(function(res) { sigImg.onload = res; sigImg.onerror = res; });
     const sigH = Math.round(20 * MM);
     const sigW = sigImg.width > 0 ? Math.round((sigImg.width / sigImg.height) * sigH) : Math.round(55 * MM);
+    // White background behind signature area
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(mL, y, sigW + Math.round(4 * MM), sigH + Math.round(2 * MM));
     ctx.drawImage(sigImg, mL, y, sigW, sigH);
     y += sigH + Math.round(2 * MM);
 
