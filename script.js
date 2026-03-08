@@ -190,7 +190,7 @@
     ctx1.fillStyle = "#1c1c1c";
     ctx1.font = objFS + "px Arial, sans-serif";
     ctx1.textBaseline = "middle";
-    ctx1.fillText("Objet : Lettre de recommandation - M. Ilyesse El Adaoui", mL + Math.round(5 * MM), y + objH / 2);
+    ctx1.fillText("Objet : Lettre de recommandation - Ilyesse El Adaoui", mL + Math.round(5 * MM), y + objH / 2);
     y += objH + Math.round(7 * MM);
 
     // Body text
@@ -202,24 +202,56 @@
     ctx1.textBaseline = "top";
     ctx1.font = bFS + "px Georgia, serif";
 
-    ctx1.fillText("Madame, Monsieur,", mL, y);
+    ctx1.fillText("A qui de droit,", mL, y);
     y += lnH + pGap;
 
+    // paragraphs = array of strings OR {bullet: true, items: [...]}
     const paragraphs = [
-      "J'ai l'honneur de vous adresser la presente lettre afin de recommander chaleureusement M. Ilyesse El Adaoui, qui effectue actuellement un stage de 5 mois au sein de notre entreprise SpidR en tant que stagiaire Data Engineer, sous ma supervision directe en qualite de CTO.",
-      "Depuis son arrivee, M. El Adaoui a fait preuve d'une rigueur, d'une curiosite intellectuelle et d'une capacite d'adaptation remarquables. Il a ete implique dans des projets concrets lies a la gestion et au traitement de la donnee, et a su s'integrer pleinement a notre equipe technique.",
-      "Sur le plan technique, M. El Adaoui maitrise un ensemble de competences solides et adaptees aux exigences du metier : Python, SQL, NoSQL, MongoDB, Google Cloud Platform (GCP), ainsi que les technologies d'intelligence artificielle telles que LLaMA. Il a su mobiliser ces outils de maniere professionnelle dans le cadre de ses missions, contribuant ainsi directement a la valeur ajoutee de nos projets data.",
-      "Au-dela de ses competences techniques, nous avons particulierement apprecie ses qualites humaines : sens des responsabilites, esprit d'equipe, proactivite et capacite a proposer des solutions innovantes face aux problematiques rencontrees.",
-      "C'est sans reserve que je recommande M. Ilyesse El Adaoui pour l'integration d'un Master 1 dans le domaine de la Data. Son profil, alliant competences techniques pointues et qualites personnelles avouees, est un atout certain pour toute formation d'excellence.",
-      "Je reste a votre disposition pour tout renseignement complementaire.",
+      "Je soussigne Geoffroy Detrousselle, CEO de la societe Spidr, recommande vivement Ilyesse El Adaoui, avec qui j'ai eu l'opportunite de collaborer dans le cadre de ses missions au sein de notre entreprise en tant que Data Engineer.",
+      "Durant sa mission chez Spidr, Ilyesse a travaille sur le developpement et l'evolution d'un projet technologique ambitieux visant a concevoir un agent intelligent connecte a WhatsApp, destine a automatiser certaines interactions professionnelles, structurer les echanges et assister les utilisateurs dans la gestion de leurs communications. Ce projet s'inscrit dans une logique de creation d'un produit SaaS scalable, combinant data, intelligence artificielle et technologies cloud.",
+      "Dans ce contexte, Ilyesse a contribue a plusieurs aspects techniques majeurs du projet. Il a notamment participe a la conception et au developpement de composants backend en Python, a l'integration d'APIs externes et a la mise en place d'une architecture technique reposant sur des services cloud modernes.",
+      "Plus precisement, ses travaux ont implique l'utilisation et l'integration de technologies telles que :",
+      { bullet: true, items: [
+        "Python pour le developpement backend et l'automatisation de l'agent",
+        "Google Cloud Platform (GCP), notamment Cloud Run pour le deploiement et l'execution des services applicatifs",
+        "Google Cloud SQL (PostgreSQL) pour la conception et la structuration de la base de donnees",
+        "PostgreSQL et MySQL pour la gestion et la modelisation des donnees",
+        "Integration d'APIs externes : GreenAPI pour WhatsApp et Google Calendar / Google Meet",
+        "Services d'intelligence artificielle pour la generation et l'analyse de messages",
+        "Git et GitHub, avec pipelines CI/CD via GitHub Actions pour les deploiements",
+        "Docker et deploiement cloud, dans une logique d'architecture moderne et scalable",
+      ]},
+      "Au cours de ce projet, Ilyesse a egalement participe a la structuration de la base de donnees, a la reflexion autour de l'architecture du produit et a l'integration de differents services necessaires au fonctionnement d'une plateforme SaaS.",
+      "Au-dela de ses competences techniques, Ilyesse s'est distingue par sa capacite d'apprentissage rapide, son autonomie progressive et sa forte implication dans les missions qui lui sont confiees. Il fait preuve d'une grande curiosite pour les technologies modernes et demontre une reelle volonte de comprendre les architectures logicielles en profondeur.",
+      "Je suis convaincu qu'Ilyesse possede toutes les qualites necessaires pour evoluer avec succes dans des environnements technologiques exigeants, que ce soit dans le cadre d'un stage, d'une alternance, d'un premier emploi ou de la poursuite d'etudes dans une formation specialisee.",
+      "Je recommande donc Ilyesse El Adaoui sans reserve et reste disponible pour toute information complementaire.",
       "Veuillez agreer, Madame, Monsieur, l'expression de mes salutations distinguees.",
     ];
 
     for (const para of paragraphs) {
-      for (const line of wrapText(ctx1, para, iW)) {
-        ctx1.fillText(line, mL, y); y += lnH;
+      if (para && para.bullet) {
+        const bulletX = mL + Math.round(3 * MM);
+        const textX   = mL + Math.round(7 * MM);
+        const bulletW = iW - Math.round(7 * MM);
+        ctx1.font = bFS + "px Georgia, serif";
+        for (const item of para.items) {
+          ctx1.fillStyle = "#c9a84c";
+          ctx1.beginPath();
+          ctx1.arc(bulletX, y + bFS * 0.55, Math.round(1.2 * MM), 0, Math.PI * 2);
+          ctx1.fill();
+          ctx1.fillStyle = "#1c1c1c";
+          const lines = wrapText(ctx1, item, bulletW);
+          for (const line of lines) { ctx1.fillText(line, textX, y); y += lnH; }
+          y += Math.round(0.5 * MM);
+        }
+        y += pGap;
+      } else {
+        ctx1.font = bFS + "px Georgia, serif";
+        for (const line of wrapText(ctx1, para, iW)) {
+          ctx1.fillText(line, mL, y); y += lnH;
+        }
+        y += pGap;
       }
-      y += pGap;
     }
 
     // Page 1 footer text
@@ -268,7 +300,7 @@
     y2 += Math.round(7 * MM);
     ctx2.fillStyle = "#777777";
     ctx2.font = Math.round(3.8 * MM) + "px Arial, sans-serif";
-    ctx2.fillText("Chief Technology Officer (CTO)  —  SpidR", mL, y2);
+    ctx2.fillText("CEO  —  Spidr", mL, y2);
     y2 += Math.round(20 * MM);
 
     // Signature box label
